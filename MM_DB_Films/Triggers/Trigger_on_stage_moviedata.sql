@@ -15,7 +15,7 @@ AS
    EXEC CONTROL.LOADMOVIEDATA  
 GO  
 --szemetes:
--- enable trigger  stage.Trigger_on_stage_moviedata on stage.moviedata
+-- disable trigger  stage.Trigger_on_stage_moviedata on stage.moviedata
 
  
 
