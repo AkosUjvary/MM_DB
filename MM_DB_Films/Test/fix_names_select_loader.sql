@@ -5,7 +5,7 @@ select base.*,
         (select value from (select value, row_number() over (order by (select 1)) as rn from  string_split(base.actor_nm, ' ')) a where rn=2) as second_name,
         (select value from (select value, row_number() over (order by (select 1)) as rn from  string_split(base.actor_nm, ' ')) a where rn=3) as third_name 
     from
-    (     
+    (    
         select * from (
             select 
                 imdb_id,
