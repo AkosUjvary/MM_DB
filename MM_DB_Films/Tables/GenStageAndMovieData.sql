@@ -3,7 +3,8 @@
 |                                                                                                               |
 | Name: GenStageAndMovieData.sql                                                                                |
 | Created: Akos Ujvary                                                                                          |
-| Last modified: 2023.03.20 - v1.7 - Change all CARCHAR to NVARCHAR                                             |
+| Last modified: 2023.04.01 - V1.8 - Adding STAGE.HUN_NAMES_FIX                                                 |
+|                2023.03.20 - v1.7 - Change all CARCHAR to NVARCHAR                                             |
 |                2022.12.28 - v1.6 - Changing table from DUPL to NODUPL, add MOVIEDATA.ARCHIVED_MOVIES          |                                     |
 |                2022.12.01 - v1.5 - Adding LOAD_TYPE field to STAGE.MOVIEDATA                                  |
 |                2022.11.21 - v1.4 - Adding RUN_DTTM to MOVIEDATA.MOVIE                                         |
@@ -96,6 +97,15 @@ CREATE TABLE STAGE.TMP_NODUPL_MOVIEDATA
     PLOT NVARCHAR(1000),
     AWARDS NVARCHAR(1000),
     POSTER NVARCHAR(1000)   
+);
+
+DROP TABLE IF EXISTS STAGE.HUN_NAMES_FIX;
+CREATE TABLE STAGE.HUN_NAMES_FIX
+(
+    PR_ID NVARCHAR(10), 
+    IMDB_ID NVARCHAR(1000),
+    TYPE NVARCHAR(1),
+    FIXED_NAMES NVARCHAR(1000),
 );
 
 ---------------------- MOVIEDATA -------------------------------------------------

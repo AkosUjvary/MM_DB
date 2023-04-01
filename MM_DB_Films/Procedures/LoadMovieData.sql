@@ -6,11 +6,13 @@
 |                                                                                                                                               |
 | Steps:  0. Create STAGE.TMP_NODUPL_MOVIEDATA from STAGE.MOVIEDATA and delete records from MD schema where necessary based on input STAGE data.|                                                     
 |         1. Load from STAGE.TMP_NODUPL_MOVIEDATA to STAGE.TMP_MOVIEDATA(correct format) and LOG.LOADING_ERROR(incorrect format)                |
-|          1.1 TITLE_ALT data cleaning                                                                                                          |                                                
+|          1.1 TITLE_ALT data cleaning                                                                                                          |
+|          1.2 Hun names fix for ACTORS, DIRECTORS, WRITERS                                                                                     |                  |                                                
 |         2. Load from STAGE.TMP_MOVIEDATA to MOVIEDATA schema's tables                                                                         |
 |         3. Truncate STAGE.MOVIEDATA table                                                                                                     |
 |                                                                                                                                               |
-| Last modified: 2023.03.02   v1.8 Correction to duplication logging and handling                                                               |
+| Last modified: 2023.04.01   v1.9 Fixing hun names 1.2                                                                                         |
+|                2023.03.02   v1.8 Correction to duplication logging and handling                                                               |
 |                2022.12.28   v1.7 Adding step 0, modify step 2 (deleting tmp_dupl_moviedata table) and update rating table with new movie_id   | 
 |                2022.11.21   v1.6 (Adding RUN_DTTM to MOVIEDATA.MOVIE)                                                                         |
 |                2022.11.20   v1.5 (Adding Release Date field)                                                                                  | 
@@ -306,8 +308,56 @@ IF @CNT_1=0 EXEC CONTROL.LOG_PROCESS @PR_ID=@PROCESS_ID, @NAME=@PROCESS_NAME, @T
 ELSE EXEC CONTROL.LOG_PROCESS @PR_ID=@PROCESS_ID, @NAME=@PROCESS_NAME, @TYPE='WARNING', @DETAIL=@MSG;
 
 /*----------------------------------------------  END - 1.  ---------------------------------------------------*/
+/*------------------------------------------------- 1.2 ------------------------------------------------------*/
+/* So v1.9 */
 
-/*---------------------------------------  START - 2. -------------------------------------------*/
+INSERT INTO STAGE.HUN_NAMES_FIX (PR_ID, IMDB_ID, TYPE, FIXED_NAMES) 
+SELECT @PROCESS_ID AS PR_ID, IMDB_ID, TYPE, FULL_FIXED_NAME FROM CONTROL.V_FIXED_STAGE_HUN_NAMES;
+
+UPDATE
+    STAGE.TMP_MOVIEDATA 
+SET
+    STAGE.TMP_MOVIEDATA.ACTORS = HUNNAMES.FIXED_NAMES
+FROM
+    STAGE.TMP_MOVIEDATA STG
+INNER JOIN
+    STAGE.HUN_NAMES_FIX HUNNAMES
+ON 
+    STG.IMDB_ID = HUNNAMES.IMDB_ID
+    AND HUNNAMES.TYPE='A';
+
+
+UPDATE
+    STAGE.TMP_MOVIEDATA 
+SET
+    STAGE.TMP_MOVIEDATA.DIRECTORS = HUNNAMES.FIXED_NAMES
+FROM
+    STAGE.TMP_MOVIEDATA STG
+INNER JOIN
+    STAGE.HUN_NAMES_FIX HUNNAMES
+ON 
+    STG.IMDB_ID = HUNNAMES.IMDB_ID
+    AND HUNNAMES.TYPE='D';
+    
+UPDATE
+    STAGE.TMP_MOVIEDATA 
+SET
+    STAGE.TMP_MOVIEDATA.WRITERS = HUNNAMES.FIXED_NAMES
+FROM
+    STAGE.TMP_MOVIEDATA STG
+INNER JOIN
+    STAGE.HUN_NAMES_FIX HUNNAMES
+ON 
+    STG.IMDB_ID = HUNNAMES.IMDB_ID
+    AND HUNNAMES.TYPE='W';
+
+SELECT @CNT_1=COUNT(*) FROM STAGE.HUN_NAMES_FIX WHERE PR_ID=@PROCESS_ID;
+SET @MSG=CAST(@CNT_1 as VARCHAR)+' hungarian names were fixed.';
+EXEC CONTROL.LOG_PROCESS @PR_ID=@PROCESS_ID, @NAME=@PROCESS_NAME, @TYPE='INF', @DETAIL=@MSG;
+
+/* Eo v1.9 */
+/*---------------------------------------------- END 1.2 -----------------------------------------------*/
+/*------------------------------------------  START - 2. -----------------------------------------------*/
 
 --select * from STAGE.TMP_MOVIEDATA
 
