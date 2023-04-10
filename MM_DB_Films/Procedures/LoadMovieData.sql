@@ -870,8 +870,8 @@ FROM
 FROM 
 LOG.PROCESS WHERE UPPER(NAME) = 'LOADMOVIEDATA') INNER_1
   
-select * from log.process where pr_id='PR0000005'
-
+select * from log.process order by run_dttm desc
+select * from stage.moviedata
 select * from log.loading_error
 
 select * from stage.moviedata

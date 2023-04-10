@@ -3,7 +3,8 @@
 |                                                                                                  |
 | Name: GenViews.sql                                                                               |
 | Created: Akos Ujvary                                                                             |
-| Last modified: 2023.04.01 - v1.6 - Adding V_FIXED_STAGE_HUN_NAMES, V_FIXED_MOVIEDATA_HUN_NAMES   |
+| Last modified: 2023.04.08 - v1.7 - Fix moviedata to stage view                                   |
+|                2023.04.01 - v1.6 - Adding V_FIXED_STAGE_HUN_NAMES, V_FIXED_MOVIEDATA_HUN_NAMES   |
 |                2023.03.18 - v1.5 - Fix IMDB_VOTES ranking with isnumeric (newers are N/A)        |   
 |                2023.03.03 - v1.4 - Modify MOVIEDATA.V_STAGE_MD_DUPLICATIONS (prioritize VOTES )  |
 |                2022.12.28 - v1.3 - Adding MOVIEDATA.V_STAGE_MD_DUPLICATIONS                      |
@@ -50,29 +51,34 @@ GO
 
 CREATE OR ALTER VIEW MOVIEDATA.V_STAGE_FROM_MD
 AS
-(SELECT 
-	CAST(MOV.[IMDB_ID] as VARCHAR) as IMDB_ID, 
-       CAST(MOV.[MOVIE_ID] AS VARCHAR) AS MOVIE_ID,
-	CAST(MOV.[TITLE_NM] as VARCHAR) as TITLE ,
-	CAST(MOV.[TITLE_ALT_NM] as VARCHAR) as TITLE_ALT,
-	CAST(MOV.[RELEASE_YEAR] as VARCHAR) as RELEASE_YEAR, 
-       CAST(control.f_mm_distinctStringArray(string_agg(GENRE.GENRE_NM, ','), ',', 'Y') as VARCHAR(5000)) as GENRES,
-       CAST(control.f_mm_distinctStringArray(string_agg(COUNTRY.COUNTRY_NM, ','), ',', 'Y') as VARCHAR(5000)) as COUNTRY,
-       CAST(control.f_mm_distinctStringArray(string_agg(ACTOR.ACTOR_NM, ','), ',', 'Y') as VARCHAR(5000)) as ACTORS,
-       CAST(control.f_mm_distinctStringArray(string_agg(DIRECTOR.DIRECTOR_NM, ','), ',', 'Y') as VARCHAR(5000)) as DIRECTORS,
-       CAST(control.f_mm_distinctStringArray(string_agg(WRITER.WRITER_NM, ','), ',', 'Y') as VARCHAR(5000)) as WRITERS,
-	CAST(MOV.[IMDB_RATING] as VARCHAR) as IMDB_RATING, 
-	CAST(MOV.[IMDB_VOTES] as VARCHAR) as IMDB_VOTES,
-	CAST(MOV.[METASCORE] as VARCHAR) as METASCORE, 
-	CAST(MOV.[TOMATOMETER] as VARCHAR) as TOMATOMETER,  
-	CAST(MOV.[TOMATO_USER_METER] as VARCHAR) as TOMATO_USER_METER,  
-	CAST(MOV.[TOMATO_USER_REVIEWS] as VARCHAR) as TOMATO_USER_REVIEWS, 
-       CAST(control.f_mm_distinctStringArray(string_agg(KW.KEYWORD_NM, ','), ',', 'Y') as VARCHAR(5000)) as KEYWORDS,
-       CAST(MOV.[RELEASE_DATE] as VARCHAR(5000))  as RELEASE_DATE,
-	CAST(MOV.[RUNTIME] as VARCHAR(5000))  as RUNTIME,
-	CAST(MOV.[PLOT] as VARCHAR(5000))  as PLOT,
-	CAST(MOV.[AWARDS] as VARCHAR(5000)) as AWARDS,
-	CAST(MOV.[POSTER] as VARCHAR(5000)) as POSTER 
+WITH KW_GROUPPED AS 
+ (SELECT MOVIE_ID, STRING_AGG(KEYWORD_NM, ',') as KEYWORDS FROM MOVIEDATA.KEYWORDFEATURE KWF  
+    LEFT JOIN MOVIEDATA.KEYWORD KW ON KW.KEYWORD_ID=KWF.KEYWORD_ID
+    GROUP BY MOVIE_ID)
+ 
+SELECT 
+	CAST(MOV.[IMDB_ID] as NVARCHAR) as IMDB_ID, 
+    CAST(MOV.[MOVIE_ID] AS NVARCHAR) AS MOVIE_ID,
+	CAST(MOV.[TITLE_NM] as NVARCHAR) as TITLE ,
+	CAST(MOV.[TITLE_ALT_NM] as NVARCHAR) as TITLE_ALT,
+	CAST(MOV.[RELEASE_YEAR] as NVARCHAR) as RELEASE_YEAR, 
+       CAST(control.f_mm_distinctStringArray(string_agg(GENRE.GENRE_NM, ','), ',', 'Y', 'Y') as NVARCHAR(4000)) as GENRES,
+       CAST(control.f_mm_distinctStringArray(string_agg(COUNTRY.COUNTRY_NM, ','), ',', 'Y', 'Y') as NVARCHAR(4000)) as COUNTRY,
+       CAST(control.f_mm_distinctStringArray(string_agg(ACTOR.ACTOR_NM, ','), ',', 'Y', 'Y') as NVARCHAR(4000)) as ACTORS,
+       CAST(control.f_mm_distinctStringArray(string_agg(DIRECTOR.DIRECTOR_NM, ','), ',', 'Y', 'Y') as NVARCHAR(4000)) as DIRECTORS,
+       CAST(control.f_mm_distinctStringArray(string_agg(WRITER.WRITER_NM, ','), ',', 'Y', 'Y') as NVARCHAR(4000)) as WRITERS,  
+	CAST(MOV.[IMDB_RATING] as NVARCHAR) as IMDB_RATING, 
+	CAST(MOV.[IMDB_VOTES] as NVARCHAR) as IMDB_VOTES,
+	CAST(MOV.[METASCORE] as NVARCHAR) as METASCORE, 
+	CAST(MOV.[TOMATOMETER] as NVARCHAR) as TOMATOMETER,  
+	CAST(MOV.[TOMATO_USER_METER] as NVARCHAR) as TOMATO_USER_METER,  
+	CAST(MOV.[TOMATO_USER_REVIEWS] as NVARCHAR) as TOMATO_USER_REVIEWS, 
+    CAST(KW.KEYWORDS as NVARCHAR(4000)) as KEYWORDS,
+    CAST(MOV.[RELEASE_DATE] as NVARCHAR(4000))  as RELEASE_DATE,
+	CAST(MOV.[RUNTIME] as NVARCHAR(4000))  as RUNTIME,
+	CAST(MOV.[PLOT] as NVARCHAR(4000))  as PLOT,
+	CAST(MOV.[AWARDS] as NVARCHAR(4000)) as AWARDS,
+	CAST(MOV.[POSTER] as NVARCHAR(4000)) as POSTER 
  
 FROM MOVIEDATA.MOVIE MOV
 LEFT JOIN MOVIEDATA.MOVIEFEATURE MF ON MF.MOVIE_ID=MOV.MOVIE_ID
@@ -82,11 +88,10 @@ LEFT JOIN MOVIEDATA.GENRE GENRE ON MF.FEATURE_ID=GENRE.GENRE_ID AND MF.FEATURE_C
 LEFT JOIN MOVIEDATA.DIRECTOR DIRECTOR ON MF.FEATURE_ID=DIRECTOR.DIRECTOR_ID AND MF.FEATURE_CD='D'
 LEFT JOIN MOVIEDATA.WRITER WRITER ON MF.FEATURE_ID=WRITER.WRITER_ID AND MF.FEATURE_CD='W'
 
-LEFT JOIN MOVIEDATA.KEYWORDFEATURE KWF ON KWF.MOVIE_ID=MOV.MOVIE_ID
-LEFT JOIN MOVIEDATA.KEYWORD KW ON KW.KEYWORD_ID=KWF.KEYWORD_ID
+LEFT JOIN KW_GROUPPED KW ON KW.MOVIE_ID=MOV.MOVIE_ID
 
-GROUP BY 
-	MOV.[MOVIE_ID], 
+GROUP BY
+MOV.[MOVIE_ID], 
 	MOV.[IMDB_ID], 
 	MOV.[TITLE_NM] ,
 	MOV.[TITLE_ALT_NM] ,
@@ -102,7 +107,9 @@ GROUP BY
 	MOV.[PLOT]  ,
 	MOV.[AWARDS] ,
 	MOV.[POSTER]  ,
-	MOV.[RUN_DTTM]);
+	MOV.[RUN_DTTM],
+    KEYWORDS;
+;
 
 GO
  
