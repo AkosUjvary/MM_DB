@@ -84,6 +84,9 @@ and MAIN.MOVIE_ID='MOV032979'
 -- motor sports	         25
 
 
+-- racecar driver =? car racing
+
+
  --group by NB1_KWS.KEYWORD_NM
 --order by 2 desc
 
